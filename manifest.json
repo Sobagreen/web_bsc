@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Telnet Quick Connect",
+  "version": "1.0.0",
+  "description": "Выбор одного из 3 IP и подключение по Telnet через локальный bridge-сервис.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Telnet Quick Connect"
+  },
+  "permissions": [
+    "storage"
+  ]
+}

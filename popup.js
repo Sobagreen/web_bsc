@@ -70,6 +70,7 @@ function connectBridge() {
     try {
       msg = JSON.parse(event.data);
     } catch {
+      appendTerminal(event.data);
       return;
     }
 

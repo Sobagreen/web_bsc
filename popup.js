@@ -34,7 +34,11 @@ function appendTerminal(text) {
 function setConnectedUiState(isConnected) {
   connectBtn.disabled = isConnected;
   disconnectBtn.disabled = !isConnected;
-  sendBtn.disabled = !isConnected;
+  sendBtn.disabled = true;
+}
+
+function unlockCommands() {
+  sendBtn.disabled = false;
 }
 
 function initTargets() {
@@ -66,11 +70,13 @@ function connectBridge() {
     try {
       msg = JSON.parse(event.data);
     } catch {
-      appendTerminal(event.data);
       return;
     }
 
     if (msg.type === "status") {
+      if (msg.value === "password отправлен") {
+        unlockCommands();
+      }
       setStatus(msg.value);
       return;
     }
@@ -82,7 +88,6 @@ function connectBridge() {
 
     if (msg.type === "error") {
       setStatus(`ошибка: ${msg.value}`);
-      appendTerminal(`[ERROR] ${msg.value}`);
       return;
     }
   });
@@ -119,7 +124,6 @@ sendBtn.addEventListener("click", () => {
     return;
   }
   ws.send(JSON.stringify({ type: "command", value: command }));
-  appendTerminal(`> ${command}`);
   commandEl.value = "";
 });
 

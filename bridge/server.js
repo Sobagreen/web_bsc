@@ -70,6 +70,10 @@ wss.on("connection", (client) => {
         send({ type: "error", value: "Нет активного telnet подключения" });
         return;
       }
+      if (!passwordSent) {
+        send({ type: "error", value: "Сначала дождитесь завершения авторизации" });
+        return;
+      }
       telnetSocket.write(`${msg.value}\n`);
       return;
     }

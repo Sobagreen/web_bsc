@@ -8,7 +8,8 @@ console.log(`[bridge] WebSocket bridge started at ws://127.0.0.1:${BRIDGE_PORT}`
 
 wss.on("connection", (client) => {
   let telnetSocket = null;
-  let isAuthorized = false;
+  let usernameSent = false;
+  let passwordSent = false;
 
   const send = (obj) => {
     if (client.readyState === client.OPEN) {
@@ -37,19 +38,19 @@ wss.on("connection", (client) => {
         const data = chunk.toString();
         send({ type: "data", value: data });
 
-        if (!isAuthorized) {
-          const lower = data.toLowerCase();
+        const upper = data.toUpperCase();
 
-          if (lower.includes("login:") || lower.includes("username:")) {
-            telnetSocket.write(`${username}\n`);
-            return;
-          }
+        if (!usernameSent && upper.includes("ENTER USERNAME")) {
+          telnetSocket.write(`${username}\n`);
+          usernameSent = true;
+          send({ type: "status", value: "username отправлен" });
+          return;
+        }
 
-          if (lower.includes("password:")) {
-            telnetSocket.write(`${password}\n`);
-            isAuthorized = true;
-            send({ type: "status", value: "авторизация отправлена" });
-          }
+        if (usernameSent && !passwordSent && upper.includes("ENTER PASSWORD")) {
+          telnetSocket.write(`${password}\n`);
+          passwordSent = true;
+          send({ type: "status", value: "password отправлен" });
         }
       });
 

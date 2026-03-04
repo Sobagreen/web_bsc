@@ -93,13 +93,17 @@ function connectBridge() {
     }
   });
 
-  ws.addEventListener("close", () => {
-    setStatus("соединение закрыто");
+  ws.addEventListener("close", (event) => {
+    if (event.code !== 1000) {
+      setStatus(`соединение закрыто (code ${event.code})`);
+    } else {
+      setStatus("соединение закрыто");
+    }
     setConnectedUiState(false);
   });
 
   ws.addEventListener("error", () => {
-    setStatus("не удалось подключиться к bridge");
+    setStatus("ошибка WebSocket до bridge (проверьте bridge и CSP)");
     setConnectedUiState(false);
   });
 }

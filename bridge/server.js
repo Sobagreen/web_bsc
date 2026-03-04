@@ -1,5 +1,5 @@
 import net from "node:net";
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 
 const BRIDGE_PORT = 8765;
 const wss = new WebSocketServer({ port: BRIDGE_PORT, host: "127.0.0.1" });
@@ -12,9 +12,14 @@ wss.on("connection", (client) => {
   let passwordSent = false;
 
   const send = (obj) => {
-    if (client.readyState === client.OPEN) {
+    if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify(obj));
     }
+  };
+
+  const resetAuthState = () => {
+    usernameSent = false;
+    passwordSent = false;
   };
 
   client.on("message", (rawData) => {
@@ -28,6 +33,12 @@ wss.on("connection", (client) => {
 
     if (msg.type === "connect") {
       const { host, port = 23, username, password } = msg;
+
+      if (telnetSocket && !telnetSocket.destroyed) {
+        telnetSocket.end();
+      }
+      resetAuthState();
+
       telnetSocket = net.createConnection({ host, port }, () => {
         send({ type: "status", value: `telnet connected to ${host}:${port}` });
       });

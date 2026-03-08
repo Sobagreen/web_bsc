@@ -1,0 +1,78 @@
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  width: 420px;
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+select,
+input,
+button {
+  border: 1px solid #374151;
+  background: #1f2937;
+  color: #f9fafb;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+}
+
+button {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #374151;
+  border-color: #374151;
+  cursor: not-allowed;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row > * {
+  flex: 1;
+}
+
+.status {
+  margin: 2px 0;
+  font-size: 12px;
+}
+
+.terminal {
+  margin: 0;
+  min-height: 150px;
+  max-height: 220px;
+  overflow: auto;
+  background: #030712;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 8px;
+  white-space: pre-wrap;
+  font-size: 12px;
+}

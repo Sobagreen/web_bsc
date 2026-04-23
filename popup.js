@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const status = document.getElementById('status');
 
   // Сразу ставим фокус в поле ввода
+
+  setResultsVisibility(false);
   if (input) {
     input.focus();
     input.select();
@@ -87,6 +89,7 @@ async function handleSearch({ openIp, showBuild, showDiagram = false }) {
   input.value = code;
   status.textContent = '';
   clearResults();
+  setResultsVisibility(showBuild);
 
   if (!sitesLoaded) {
     status.textContent = 'Подождите, идёт загрузка таблицы IP (sites.csv)…';
@@ -115,7 +118,7 @@ async function handleSearch({ openIp, showBuild, showDiagram = false }) {
     status.textContent = 'Совпадение по IP не найдено в sites.csv.';
   }
 
-  // --- Build: RDB + LNCEL + 2G + 4G_ANT + OPT_Speed ---
+  // --- Build: LNCEL + 2G + 4G_ANT + OPT_Speed + поля RDB в статус ---
   if (showBuild) {
     if (buildDataError) {
       status.textContent = (status.textContent ? status.textContent + '\n' : '') +
@@ -128,12 +131,18 @@ async function handleSearch({ openIp, showBuild, showDiagram = false }) {
       return;
     }
 
-    if (url) {
-      status.textContent = (status.textContent ? status.textContent + '\n' : '') +
-        'IP: ' + ip + '\nURL: ' + url;
+    const rdbRows = rdbMap.get(code) || [];
+    const rdbFirst = rdbRows[0] || {};
+
+    if (ip) {
+      const statusParts = [
+        'IP: ' + ip,
+        'Адрес: ' + (rdbFirst.N || '-'),
+        'Тип сайта: ' + (rdbFirst.O || '-')
+      ];
+      status.textContent = (status.textContent ? status.textContent + '\n' : '') + statusParts.join('\n');
     }
 
-    renderRdbResults(code);
     renderLncelResults(code);
     renderConfig2gResults(code);
     renderAnt4gResults(code, showDiagram);
@@ -146,7 +155,7 @@ async function handleSearch({ openIp, showBuild, showDiagram = false }) {
         'Не удалось открыть IP: URL не сформирован.';
       return;
     }
-    status.textContent = 'Открываю: ' + url;
+    status.textContent = 'Открываю подключение по IP: ' + (ip || '-');
     chrome.tabs.create({ url: url }, () => {
       if (chrome.runtime.lastError) {
         console.error('Ошибка при открытии URL:', chrome.runtime.lastError);
@@ -158,8 +167,14 @@ async function handleSearch({ openIp, showBuild, showDiagram = false }) {
 
 /* ================== Общие утилиты ================== */
 
+function setResultsVisibility(show) {
+  const resultsContainer = document.getElementById('resultsContainer');
+  if (!resultsContainer) return;
+  resultsContainer.style.display = show ? 'flex' : 'none';
+}
+
 function clearResults() {
-  ['rdbContainer', 'lncelContainer', 'config2gContainer', 'ant4gContainer', 'ant4gDiagramContainer'].forEach(id => {
+  ['lncelContainer', 'config2gContainer', 'ant4gContainer', 'ant4gDiagramContainer'].forEach(id => {
     const c = document.getElementById(id);
     if (c) c.innerHTML = '';
   });
@@ -234,58 +249,6 @@ function normalizeIp(ipRaw) {
   ip = ip.replace(/[;,]+$/g, '');
 
   return ip.trim();
-}
-
-/* ================== RDB TABLE ================== */
-
-function renderRdbResults(code) {
-  const container = document.getElementById('rdbContainer');
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  const rows = rdbMap.get(code) || [];
-
-  if (rows.length === 0) {
-    container.textContent = 'Нет данных в RDB.';
-    return;
-  }
-
-  const table = document.createElement('table');
-  const thead = document.createElement('thead');
-  const headRow = document.createElement('tr');
-
-  const headers = [
-    'Адрес',  // N
-    'Тип сайта',    // O
-    'Тип стойки питания',      // P
-    'Вендор БС'  // R
-  ];
-
-  headers.forEach(h => {
-    const th = document.createElement('th');
-    th.textContent = h;
-    headRow.appendChild(th);
-  });
-
-  thead.appendChild(headRow);
-  table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
-
-  rows.forEach(r => {
-    const tr = document.createElement('tr');
-    const cells = [r.N, r.O, r.P, r.R];
-    cells.forEach(v => {
-      const td = document.createElement('td');
-      td.textContent = v || '';
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
-  });
-
-  table.appendChild(tbody);
-  container.appendChild(table);
 }
 
 /* ================== LNCEL TABLE (4G) ================== */

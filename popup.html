@@ -132,7 +132,7 @@
 
     /* Трёхколоночный макет */
     #resultsContainer {
-      display: flex;
+      display: none;
       gap: 8px;             /* Уменьшен разрыв между колонками */
       flex: 1;
       min-height: 0;
@@ -358,10 +358,6 @@
       <!-- Колонка 1: 4G информация -->
       <div class="results-column">
         <div class="column-title">📡 4G информация</div>
-        <div class="results-section">
-          <div class="results-section-title">RDB данные</div>
-          <div id="rdbContainer"></div>
-        </div>
         <div class="results-section">
           <div class="results-section-title">LNCEL конфигурация</div>
           <div id="lncelContainer"></div>

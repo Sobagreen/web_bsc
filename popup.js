@@ -9,8 +9,10 @@ let sitesLoaded = false;
 let buildDataLoaded = false;
 let buildDataError = false;
 
+let lastAntDetails = []; // детальные строки для схемы ANT+RMOD
+
 // Индекс колонки admin_state в таблице 2G (по массиву cells ниже)
-// cfg2gHeaders = [ 'П\Н', 'BS_NAME', 'LAC', 'RAC', 'Sector_NAME', 'NCC', 'BCC', 'BCCH', 'admin_state', 'TRX_POWER', 'TRX.TRX.trxRfPower', 'TrxRfPower' ]
+// cfg2gHeaders = [ 'П\\Н', 'BS_NAME', 'LAC', 'RAC', 'Sector_NAME', 'NCC', 'BCC', 'BCCH', 'admin_state', 'TRX_POWER', 'TRX.TRX.trxRfPower', 'TrxRfPower' ]
 // cells = [idx+1, code, E, G, H, I, J, K, L, O, P, N]
 //           0     1    2  3  4  5  6  7  8  9 10 11
 // => admin_state = cells[8]
@@ -23,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const status = document.getElementById('status');
 
   // Сразу ставим фокус в поле ввода
+
+  setResultsVisibility(false);
   if (input) {
     input.focus();
     input.select();
@@ -59,28 +63,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Горячие клавиши:
-  // Enter        -> IP
-  // Ctrl + Enter -> Build
+  // Enter         -> IP
+  // Ctrl + Enter  -> Build (таблицы)
+  // Shift + Enter -> Build + графика RMOD
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (e.ctrlKey) {
-        handleSearch({ openIp: false, showBuild: true });
+      if (e.shiftKey) {
+        handleSearch({ openIp: false, showBuild: true, showDiagram: true });
+      } else if (e.ctrlKey) {
+        handleSearch({ openIp: false, showBuild: true, showDiagram: false });
       } else {
-        handleSearch({ openIp: true, showBuild: false });
+        handleSearch({ openIp: true, showBuild: false, showDiagram: false });
       }
     }
   });
 });
 
-async function handleSearch({ openIp, showBuild }) {
+async function handleSearch({ openIp, showBuild, showDiagram = false }) {
   const input = document.getElementById('codeInput');
   const status = document.getElementById('status');
 
   const rawCode = input.value.trim();
-  const code = rawCode.toUpperCase();
+  const code = normalizeBsCode(rawCode);
+  input.value = code;
   status.textContent = '';
   clearResults();
+  setResultsVisibility(showBuild);
 
   if (!sitesLoaded) {
     status.textContent = 'Подождите, идёт загрузка таблицы IP (sites.csv)…';
@@ -109,7 +118,7 @@ async function handleSearch({ openIp, showBuild }) {
     status.textContent = 'Совпадение по IP не найдено в sites.csv.';
   }
 
-  // --- Build: RDB + LNCEL + 2G + 4G_ANT + OPT_Speed ---
+  // --- Build: LNCEL + 2G + 4G_ANT + OPT_Speed + поля RDB в статус ---
   if (showBuild) {
     if (buildDataError) {
       status.textContent = (status.textContent ? status.textContent + '\n' : '') +
@@ -122,15 +131,21 @@ async function handleSearch({ openIp, showBuild }) {
       return;
     }
 
-    if (url) {
-      status.textContent = (status.textContent ? status.textContent + '\n' : '') +
-        'IP: ' + ip + '\nURL: ' + url;
+    const rdbRows = rdbMap.get(code) || [];
+    const rdbFirst = rdbRows[0] || {};
+
+    if (ip) {
+      const statusParts = [
+        'IP: ' + ip,
+        'Адрес: ' + (rdbFirst.N || '-'),
+        'Тип сайта: ' + (rdbFirst.O || '-')
+      ];
+      status.textContent = (status.textContent ? status.textContent + '\n' : '') + statusParts.join('\n');
     }
 
-    renderRdbResults(code);
     renderLncelResults(code);
     renderConfig2gResults(code);
-    renderAnt4gResults(code);
+    renderAnt4gResults(code, showDiagram);
   }
 
   // --- Открыть IP ---
@@ -140,7 +155,7 @@ async function handleSearch({ openIp, showBuild }) {
         'Не удалось открыть IP: URL не сформирован.';
       return;
     }
-    status.textContent = 'Открываю: ' + url;
+    status.textContent = 'Открываю подключение по IP: ' + (ip || '-');
     chrome.tabs.create({ url: url }, () => {
       if (chrome.runtime.lastError) {
         console.error('Ошибка при открытии URL:', chrome.runtime.lastError);
@@ -152,11 +167,35 @@ async function handleSearch({ openIp, showBuild }) {
 
 /* ================== Общие утилиты ================== */
 
+function setResultsVisibility(show) {
+  const resultsContainer = document.getElementById('resultsContainer');
+  if (!resultsContainer) return;
+  resultsContainer.style.display = show ? 'flex' : 'none';
+}
+
 function clearResults() {
-  ['rdbContainer', 'lncelContainer', 'config2gContainer', 'ant4gContainer'].forEach(id => {
+  ['lncelContainer', 'config2gContainer', 'ant4gContainer', 'ant4gDiagramContainer'].forEach(id => {
     const c = document.getElementById(id);
     if (c) c.innerHTML = '';
   });
+}
+
+
+
+const RU_TO_EN_LAYOUT_MAP = {
+  'Й': 'Q', 'Ц': 'W', 'У': 'E', 'К': 'R', 'Е': 'T', 'Н': 'Y', 'Г': 'U', 'Ш': 'I', 'Щ': 'O', 'З': 'P',
+  'Ф': 'A', 'Ы': 'S', 'В': 'D', 'А': 'F', 'П': 'G', 'Р': 'H', 'О': 'J', 'Л': 'K', 'Д': 'L',
+  'Я': 'Z', 'Ч': 'X', 'С': 'C', 'М': 'V', 'И': 'B', 'Т': 'N', 'Ь': 'M'
+};
+
+function normalizeBsCode(rawCode) {
+  const upper = String(rawCode || '').trim().toUpperCase();
+  if (!upper) return '';
+
+  return upper
+    .split('')
+    .map(ch => RU_TO_EN_LAYOUT_MAP[ch] || ch)
+    .join('');
 }
 
 function detectDelimiter(headerLine) {
@@ -210,58 +249,6 @@ function normalizeIp(ipRaw) {
   ip = ip.replace(/[;,]+$/g, '');
 
   return ip.trim();
-}
-
-/* ================== RDB TABLE ================== */
-
-function renderRdbResults(code) {
-  const container = document.getElementById('rdbContainer');
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  const rows = rdbMap.get(code) || [];
-
-  if (rows.length === 0) {
-    container.textContent = 'Нет данных в RDB.';
-    return;
-  }
-
-  const table = document.createElement('table');
-  const thead = document.createElement('thead');
-  const headRow = document.createElement('tr');
-
-  const headers = [
-    'Адрес',  // N
-    'Тип сайта',    // O
-    'Тип стойки питания',      // P
-    'Вендор БС'  // R
-  ];
-
-  headers.forEach(h => {
-    const th = document.createElement('th');
-    th.textContent = h;
-    headRow.appendChild(th);
-  });
-
-  thead.appendChild(headRow);
-  table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
-
-  rows.forEach(r => {
-    const tr = document.createElement('tr');
-    const cells = [r.N, r.O, r.P, r.R];
-    cells.forEach(v => {
-      const td = document.createElement('td');
-      td.textContent = v || '';
-      tr.appendChild(td);
-    });
-    tbody.appendChild(tr);
-  });
-
-  table.appendChild(tbody);
-  container.appendChild(table);
 }
 
 /* ================== LNCEL TABLE (4G) ================== */
@@ -438,15 +425,17 @@ function toAntKeyFromX(xVal) {
 
 /* ================== 4G ANT + OPT_Speed TABLE (ANT_RMOD) ================== */
 
-function renderAnt4gResults(code) {
+function renderAnt4gResults(code, showDiagram = false) {
   const container = document.getElementById('ant4gContainer');
   if (!container) return;
 
   container.innerHTML = '';
+  lastAntDetails = [];
 
   const lncelMatches = lncelMap.get(code) || [];
   if (lncelMatches.length === 0) {
     container.textContent = 'Нет X в LNCEL — нечего искать в 4G_ANT.';
+    renderRmodDiagram([], showDiagram);
     return;
   }
 
@@ -458,6 +447,7 @@ function renderAnt4gResults(code) {
 
   if (xSet.size === 0) {
     container.textContent = 'LNCEL найден, но X пустые.';
+    renderRmodDiagram([], showDiagram);
     return;
   }
 
@@ -480,7 +470,7 @@ function renderAnt4gResults(code) {
   ant4gHeaders.forEach((h, i) => {
     const th = document.createElement('th');
     th.textContent = h;
-    if (i === 0) th.classList.add('col-idx'); // скрываем П\Н
+    if (i === 0) th.classList.add('col-idx');
     headRow.appendChild(th);
   });
 
@@ -505,6 +495,15 @@ function renderAnt4gResults(code) {
       tbody.appendChild(tr);
       return;
     }
+
+    rows.forEach(r => {
+      lastAntDetails.push({
+        sectorName: xVal,
+        ant: r.C,
+        rmodNo: r.D,
+        rmodType: r.E
+      });
+    });
 
     const ants = Array.from(new Set(rows.map(r => r.C).filter(Boolean))).join('.');
     const rmods = Array.from(new Set(rows.map(r => r.D).filter(Boolean))).join('/');
@@ -548,6 +547,82 @@ function renderAnt4gResults(code) {
 
   table.appendChild(tbody);
   container.appendChild(table);
+  renderRmodDiagram(lastAntDetails, showDiagram);
+}
+
+function renderRmodDiagram(antDetails, showDiagram) {
+  const diagramContainer = document.getElementById('ant4gDiagramContainer');
+  if (!diagramContainer) return;
+
+  diagramContainer.innerHTML = '';
+
+  if (!showDiagram) {
+    diagramContainer.textContent = 'Схема RMOD скрыта. Нажмите Shift+Enter для отображения.';
+    return;
+  }
+
+  if (!antDetails || antDetails.length === 0) {
+    diagramContainer.textContent = 'Недостаточно данных для схемы RMOD.';
+    return;
+  }
+
+  const byRmod = new Map();
+
+  antDetails.forEach(item => {
+    const key = String(item.rmodNo || '').trim();
+    if (!key) return;
+
+    if (!byRmod.has(key)) {
+      byRmod.set(key, { rmodType: item.rmodType || '-', links: [] });
+    }
+
+    const payload = byRmod.get(key);
+    if (!payload.rmodType && item.rmodType) payload.rmodType = item.rmodType;
+
+    const label = `${item.sectorName || '-'} (${item.ant || '-'})`;
+    if (!payload.links.includes(label)) payload.links.push(label);
+  });
+
+  if (byRmod.size === 0) {
+    diagramContainer.textContent = 'RMOD_№ не найден в текущих данных.';
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.className = 'rmod-diagram-list';
+
+  Array.from(byRmod.entries())
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .forEach(([rmodNo, payload]) => {
+      const row = document.createElement('div');
+      row.className = 'rmod-row';
+
+      const box = document.createElement('div');
+      box.className = 'rmod-box';
+      box.textContent = payload.rmodType || '-';
+      box.title = `RMOD_№ ${rmodNo}`;
+
+      const links = document.createElement('div');
+      links.className = 'rmod-links';
+
+      payload.links.forEach(linkText => {
+        const linkLine = document.createElement('div');
+        linkLine.className = 'rmod-link-line';
+        linkLine.textContent = linkText;
+        links.appendChild(linkLine);
+      });
+
+      const number = document.createElement('div');
+      number.className = 'rmod-number';
+      number.textContent = `RMOD ${rmodNo}`;
+
+      row.appendChild(number);
+      row.appendChild(box);
+      row.appendChild(links);
+      list.appendChild(row);
+    });
+
+  diagramContainer.appendChild(list);
 }
 
 /* ================== ЗАГРУЗКА CSV ================== */

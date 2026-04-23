@@ -132,7 +132,7 @@
 
     /* Трёхколоночный макет */
     #resultsContainer {
-      display: flex;
+      display: none;
       gap: 8px;             /* Уменьшен разрыв между колонками */
       flex: 1;
       min-height: 0;
@@ -162,7 +162,7 @@
     }
 
     .column-title {
-      font-size: 13px;      /* Уменьшен заголовок колонки */
+      font-size: 12px;      /* Уменьшен заголовок колонки */
       font-weight: 700;
       color: #0f172a;
       margin: 0 0 8px 0;
@@ -175,7 +175,7 @@
     }
 
     .results-section-title {
-      font-size: 11px;      /* Уменьшен подзаголовок секции */
+      font-size: 10px;      /* Уменьшен подзаголовок секции */
       font-weight: 600;
       color: #334155;
       margin: 8px 0 4px 0;  /* Уменьшены отступы */
@@ -201,7 +201,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 10px;      /* Уменьшен шрифт таблицы */
+      font-size: 9px;      /* Уменьшен шрифт таблицы */
       margin-bottom: 8px;
       background: white;
       border-radius: 6px;
@@ -216,7 +216,7 @@
 
     th, td {
       border: 1px solid #e2e8f0;
-      padding: 3px 5px;     /* Очень компактные ячейки */
+      padding: 2px 4px;     /* Ещё компактнее ячейки */
       text-align: left;
       box-sizing: border-box;
     }
@@ -252,6 +252,71 @@
     td.col-idx {
       display: none;
     }
+
+    #ant4gDiagramContainer {
+      margin-top: 8px;
+      font-size: 9px;
+      color: #1e293b;
+      background: #ffffff;
+      border: 1px solid #dbeafe;
+      border-radius: 6px;
+      padding: 6px;
+    }
+
+    .rmod-diagram-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .rmod-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .rmod-number {
+      min-width: 46px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .rmod-box {
+      min-width: 52px;
+      padding: 6px 4px;
+      border: 1px solid #0ea5e9;
+      background: #e0f2fe;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 700;
+      color: #0c4a6e;
+    }
+
+    .rmod-links {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .rmod-link-line {
+      position: relative;
+      padding-left: 12px;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .rmod-link-line::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 8px;
+      border-top: 1px solid #64748b;
+      transform: translateY(-50%);
+    }
+
   </style>
 </head>
 <body>
@@ -273,7 +338,7 @@
       </span>
       <span style="display: inline-flex; align-items: center; gap: 4px;">
         <span style="background: #f59e0b; width: 5px; height: 5px; border-radius: 50%;"></span>
-        <b>Enter</b> — IP, <b>Ctrl+Enter</b> — Build
+        <b>Enter</b> — IP, <b>Ctrl+Enter</b> — Build, <b>Shift+Enter</b> — RMOD схема
       </span>
     </div>
 
@@ -294,10 +359,6 @@
       <div class="results-column">
         <div class="column-title">📡 4G информация</div>
         <div class="results-section">
-          <div class="results-section-title">RDB данные</div>
-          <div id="rdbContainer"></div>
-        </div>
-        <div class="results-section">
           <div class="results-section-title">LNCEL конфигурация</div>
           <div id="lncelContainer"></div>
         </div>
@@ -316,6 +377,7 @@
         <div class="column-title">🔌 ANT + RMOD</div>
         <div class="results-section">
           <div id="ant4gContainer"></div>
+        <div id="ant4gDiagramContainer" class="no-results">Схема RMOD скрыта. Нажмите Shift+Enter для отображения.</div>
         </div>
       </div>
     </div>

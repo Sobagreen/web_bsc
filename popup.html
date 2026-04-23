@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Конфиг БС MR SOUTH</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      /* ===== ЗДЕСЬ ЗАДАЕТСЯ РАЗМЕР POPUP-ОКНА (УМЕНЬШЕНО) ===== */
+      width: 800px;        /* Ширина окна */
+      height: 550px;        /* Высота окна */
+      padding: 0px;        /* Уменьшен внешний отступ */
+      box-sizing: border-box;
+      background: #f5f5f7;
+      overflow: hidden;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px; /* Чуть меньше скругление */
+      padding: 12px 16px;  /* Уменьшены внутренние отступы */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #e2e8f0;
+    }
+
+    h1 {
+      font-size: 18px;      /* Уменьшен заголовок */
+      margin: 0 0 6px 0;
+      color: #0f172a;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .subtitle {
+      font-size: 11px;      /* Уменьшен шрифт подсказки */
+      color: #64748b;
+      margin-bottom: 8px;   /* Уменьшен отступ */
+      padding: 8px 10px;    /* Уменьшены отступы внутри плашки */
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      line-height: 1.4;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;             /* Уменьшен разрыв между элементами */
+      align-items: center;
+      margin-bottom: 8px;   /* Уменьшен отступ снизу */
+      flex-wrap: wrap;
+      background: #f8fafc;
+      padding: 8px 10px;    /* Уменьшены отступы */
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    label {
+      font-size: 12px;      /* Уменьшен шрифт лейбла */
+      font-weight: 600;
+      color: #334155;
+    }
+
+    #codeInput {
+      flex: 0 0 120px;      /* Чуть уже поле ввода */
+      padding: 6px 10px;    /* Уменьшены отступы */
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      font-size: 13px;      /* Уменьшен шрифт */
+      font-weight: 500;
+      box-sizing: border-box;
+      transition: all 0.2s;
+      background: white;
+    }
+
+    #codeInput:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+    .btn {
+      padding: 6px 14px;    /* Уменьшены кнопки */
+      border-radius: 6px;
+      border: none;
+      font-size: 12px;      /* Уменьшен шрифт кнопок */
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #ipBtn {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    #ipBtn:hover {
+      background: #1d4ed8;
+    }
+
+    #buildBtn {
+      background: #10b981;
+      color: #fff;
+    }
+
+    #buildBtn:hover {
+      background: #059669;
+    }
+
+    .status {
+      font-size: 11px;      /* Уменьшен статус */
+      color: #334155;
+      margin-bottom: 8px;   /* Уменьшен отступ */
+      padding: 6px 10px;    /* Уменьшены отступы */
+      background: #f0f9ff;
+      border-radius: 6px;
+      border-left: 3px solid #2563eb;
+      white-space: pre-line;
+      font-weight: 500;
+    }
+
+    /* Трёхколоночный макет */
+    #resultsContainer {
+      display: flex;
+      gap: 8px;             /* Уменьшен разрыв между колонками */
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .results-column {
+      flex: 1;
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 8px;         /* Уменьшены отступы колонки */
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      min-width: 0;
+    }
+
+    .results-column::-webkit-scrollbar {
+      width: 4px;           /* Тоньше скроллбар */
+    }
+
+    .results-column::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    .results-column::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+    }
+
+    .column-title {
+      font-size: 13px;      /* Уменьшен заголовок колонки */
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 8px 0;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      z-index: 10;
+    }
+
+    .results-section-title {
+      font-size: 11px;      /* Уменьшен подзаголовок секции */
+      font-weight: 600;
+      color: #334155;
+      margin: 8px 0 4px 0;  /* Уменьшены отступы */
+      padding-left: 4px;
+      border-left: 3px solid #2563eb;
+    }
+
+    .results-section-title:first-of-type {
+      margin-top: 0;
+    }
+
+    .no-results {
+      font-size: 11px;
+      color: #64748b;
+      margin: 4px 0;
+      padding: 8px;
+      text-align: center;
+      background: #ffffff;
+      border-radius: 6px;
+      border: 1px dashed #cbd5e1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;      /* Уменьшен шрифт таблицы */
+      margin-bottom: 8px;
+      background: white;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+    }
+
+    thead {
+      background: #f1f5f9;
+    }
+
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 3px 5px;     /* Очень компактные ячейки */
+      text-align: left;
+      box-sizing: border-box;
+    }
+
+    th {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 9px;       /* Уменьшен шрифт заголовков таблицы */
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    tbody tr:hover {
+      background: #f1f5f9;
+    }
+
+    .code-highlight {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-weight: 600;
+      color: #2563eb;
+      background: #dbeafe;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 10px;      /* Уменьшен шрифт кода */
+    }
+
+    /* Скрываем первый столбец (П\Н) для всех таблиц */
+    th.col-idx,
+    td.col-idx {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔧 Конфиг БС MR SOUTH</h1>
+    
+    <div class="subtitle">
+      <span style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+        <span style="background: #2563eb; width: 5px; height: 5px; border-radius: 50%;"></span>
+        Формат: <span class="code-highlight">XXYYYY</span>
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+        <span style="background: #2563eb; width: 5px; height: 5px; border-radius: 50%;"></span>
+        <b>Кнопка IP</b> — подключение
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">
+        <span style="background: #10b981; width: 5px; height: 5px; border-radius: 50%;"></span>
+        <b>Кнопка Build</b> — информация
+      </span>
+      <span style="display: inline-flex; align-items: center; gap: 4px;">
+        <span style="background: #f59e0b; width: 5px; height: 5px; border-radius: 50%;"></span>
+        <b>Enter</b> — IP, <b>Ctrl+Enter</b> — Build
+      </span>
+    </div>
+
+    <div class="form-row">
+      <label for="codeInput">Номер БС:</label>
+      <input id="codeInput" type="text" placeholder="AB1234" maxlength="6" />
+      <button id="ipBtn" class="btn">🔌 Подключение по IP</button>
+      <button id="buildBtn" class="btn">🏗️ Информация о БС</button>
+    </div>
+
+    <div id="status" class="status">
+      ⚡ Таблица IP загружена. Введите код.
+    </div>
+
+    <!-- Три колонки результатов -->
+    <div id="resultsContainer">
+      <!-- Колонка 1: 4G информация -->
+      <div class="results-column">
+        <div class="column-title">📡 4G информация</div>
+        <div class="results-section">
+          <div class="results-section-title">RDB данные</div>
+          <div id="rdbContainer"></div>
+        </div>
+        <div class="results-section">
+          <div class="results-section-title">LNCEL конфигурация</div>
+          <div id="lncelContainer"></div>
+        </div>
+      </div>
+
+      <!-- Колонка 2: 2G информация -->
+      <div class="results-column">
+        <div class="column-title">📱 2G сектора</div>
+        <div class="results-section">
+          <div id="config2gContainer"></div>
+        </div>
+      </div>
+
+      <!-- Колонка 3: ANT + RMOD информация -->
+      <div class="results-column">
+        <div class="column-title">🔌 ANT + RMOD</div>
+        <div class="results-section">
+          <div id="ant4gContainer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
